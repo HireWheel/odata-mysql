@@ -1,6 +1,8 @@
 # OData to MySQL
 
-A CLI tool for downloading from an OData server into a MySQL database
+A CLI tool for downloading from an OData server into a MySQL database.
+
+This tool was developed for working with specific datasets provided by various government agencies, and as such, features have only been added as needed. Pull requests with new features are welcome; please be sure to follow the coding style already used in the existing code and to keep your commit history relatively clean and orderly.
 
 Basic help information (explanation of all the flags) can be found by running:
 
@@ -12,7 +14,7 @@ More documentation available below.
 
 This tool does not yet totally clean and verify all the input from the OData server, so be careful! Don't use it with an untrustworthy OData server or with a critical database.
 
-This tool also does not currently store the links between data types (i.e. the links defined by NavigationProperty elements in OData). If you would like to add this functionality, then please go ahead! Right now, all normal data type columns are prefixed with "data:" in the MySQL column names. If you add links, perhaps you might prefix the columns related to that with "link:" or "nav:" or something.
+This tool also does not currently store the links between data types (i.e. the links defined by NavigationProperty elements in OData). If you would like to add this functionality, feel free to fork and pull request. Right now, all normal data type columns are prefixed with "data:" in the MySQL column names. If you add links, perhaps you might prefix the columns related to that with "link:" or "nav:" or something.
 
 ## Documentation
 
@@ -28,7 +30,7 @@ This will create tables for all the data types in the first schema on the specif
 
 If you want to force the script to drop the tables if they already existed (as opposed to crashing), include the `--aggressive` flag (``-a``).
 
-If you want to include all schemas on the server instead just the first one, use the `--includeallschemas` flag (`-i`) (basically, only including the first schema is a hacky workaround for Philadelphia's OData server, and this flag disables that hacky workaround).
+If you want to include all schemas on the server instead just the first one, use the `--includeallschemas` flag (`-i`) (basically, only including the first schema is a hacky workaround for [Philadelphia's OData server](http://phlapi.com), and this flag disables that hacky workaround).
 
 ### Downloading data
 
