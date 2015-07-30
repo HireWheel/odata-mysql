@@ -1,6 +1,6 @@
 # OData to MySQL
 
-A CLI tool for scraping OData servers into a MySQL database.
+A CLI tool for downloading from an OData server into a MySQL database
 
 Basic help information (explanation of all the flags) can be found by running:
 
