@@ -343,7 +343,7 @@ def insertAllEntities(con, entityType, expandTypes=None, **kwargs):
 
 	cur = con.cursor()
 
-	nextUrl = OD_ROOT + "/" + entityType
+	nextUrl = odRoot + "/" + entityType
 	if expandTypes != None:
 		nextUrl += "?$expand=" + expandTypes
 
