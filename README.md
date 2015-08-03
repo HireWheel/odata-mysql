@@ -36,7 +36,7 @@ Before you can download data from the server, you need tables for them to go int
 
     python odata_mysql.py -c [-r odata_root] [-u mysql_uri]
 
-This will create tables for all the data types in the first schema on the specified OData server. Currently, it is hardcoded to connect to root@localhost with password "root" and to modify a database called "odata-mysql"; there are variables near the top of the script that you can manually edit if this doesn't match your environment.
+This will create tables for all the data types in the first schema on the specified OData server.
 
 If you want to force the script to drop the tables if they already existed (as opposed to crashing), include the `--aggressive` flag (``-a``).
 
