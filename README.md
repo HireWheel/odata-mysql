@@ -20,11 +20,19 @@ This tool also does not currently store the links between data types (i.e. the l
 
 Basically, this tool can be used to perform two tasks: creating tables (enabled with the `-c` flag) and downloading data (enabled with the `-d` flag). You can do these both in one call of the command, or you can do them separately.
 
+### Important flags
+
+Whether you are creating tables or downloading data, you will probably need to include an OData root and MySQL details.
+
+To include an OData root, pass the URL with the `-r` flag. Your URL should include the schema (i.e. http/https) and may or may not include a trailing slash. If no OData root is specified, it defaults to `http://services.odata.org/V3/OData/OData.svc`.
+
+By default, this script uses the database "odata-mysql" on the localhost MySQL with "root" as both the username and password. To change this, pass a MySQL URI with the `-u` flag. Your URI should be in this format: `mysql://USER:PASS@HOST:PORT/DATABASE`. The script will use typical defaults for any values missing from your URI (if you omit the password, it will prompt you to enter it).
+
 ### Creating tables
 
 Before you can download data from the server, you need tables for them to go into. Here's the basic command you wanna run:
 
-    python odata_mysql.py -c [-r url_of_odata_root] [-b name_of_mysql_database]
+    python odata_mysql.py -c [-r odata_root] [-u mysql_uri]
 
 This will create tables for all the data types in the first schema on the specified OData server. Currently, it is hardcoded to connect to root@localhost with password "root" and to modify a database called "odata-mysql"; there are variables near the top of the script that you can manually edit if this doesn't match your environment.
 
@@ -36,7 +44,7 @@ If you want to include all schemas on the server instead just the first one, use
 
 Once you have tables created, you can download into them using this command:
 
-    python odata_mysql.py -d [-r url_of_odata_root] [-b name_of_mysql_database] [-e entity_type] [-x linked_entity_type] [-y]
+    python odata_mysql.py -d [-e entity_type] [-x linked_entity_type] [-y] [-r odata_root] [-u mysql_uri]
 
 The `-r` flag works the same as for creating tables, but the other flags might be confusing. The `-e` flag specifies the type of entity to download; simple enough, if you want to download the permits, set it to "permits".
 
