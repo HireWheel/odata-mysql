@@ -35,7 +35,7 @@ import pprint
 
 
 # MySQL details
-DB_URI = "mysql://root:root@localhost/odata-mysql"
+DB_URI = "mysql://root:root@localhost:3306/odata-mysql"
 
 # requests details
 REQ_USER_AGENT = "odata_mysql.py"
@@ -495,6 +495,8 @@ parser.add_argument(
 parser.add_argument(
 	"-u", "--databaseuri", help="URI for database connection (i.e. mysql://user:pass@host/database)", default=DB_URI)
 parser.add_argument(
+	"-b", "--databasename", help="Name of database to use (overwrites database URI)", default=None)
+parser.add_argument(
 	"-e", "--entitytype", help="type of entity to batch query", default=None)
 parser.add_argument(
 	"-x", "--expandtypes", help="type(s) of entity to expand, separated by commas", default=None)
@@ -537,6 +539,8 @@ if DB_PASS == None:
 DB_DATABASE = dbUri.path.strip("/")
 if DB_DATABASE == '':
 	DB_DATABASE = "mysql-odata"
+if args.databasename != None:
+	DB_DATABASE = args.databasename
 
 cleanDbHost = DB_SERVER
 if DB_PORT != 3306:
