@@ -28,15 +28,14 @@ import requests
 import sys
 import argparse
 import MySQLdb
+from urlparse import urlparse
+import getpass
 import logging as log
 import pprint
 
 
 # MySQL details
-DB_SERVER = "localhost"
-DB_USER = "root"
-DB_PASS = "root"
-DB_DATABASE = "odata-mysql"
+DB_URI = "mysql://root:root@localhost/odata-mysql"
 
 # requests details
 REQ_USER_AGENT = "odata_mysql.py"
@@ -494,7 +493,7 @@ parser.add_argument(
 parser.add_argument(
 	"-r", "--odataroot", help="root of OData server", default=OD_ROOT)
 parser.add_argument(
-	"-b", "--database", help="name of MySQL database to use", default=DB_DATABASE)
+	"-u", "--databaseuri", help="URI for database connection (i.e. mysql://user:pass@host/database)", default=DB_URI)
 parser.add_argument(
 	"-e", "--entitytype", help="type of entity to batch query", default=None)
 parser.add_argument(
@@ -510,11 +509,47 @@ args = parser.parse_args()
 
 log.basicConfig(format='%(levelname)s: %(message)s', level=log.DEBUG)
 
+
+
+# parse the database URI
+dbUri = urlparse(args.databaseuri)
+
+if dbUri.scheme != '' and dbUri.scheme != "mysql": # if a URI scheme is specified, it's gotta be mysql
+	log.error("This tool only supports MySQL; please use a different database URI. Terminating...")
+	sys.exit(1)
+
+DB_SERVER = dbUri.hostname
+if DB_SERVER == None:
+	DB_SERVER = "localhost"
+
+DB_PORT = dbUri.port
+if DB_PORT == None:
+	DB_PORT = 3306
+
+DB_USER = dbUri.username
+if DB_USER == None:
+	DB_USER = getpass.getuser()
+
+DB_PASS = dbUri.password
+if DB_PASS == None:
+	DB_PASS = getpass.getpass("MySQL password for `" + DB_USER + "`: ")
+
+DB_DATABASE = dbUri.path.strip("/")
+if DB_DATABASE == '':
+	DB_DATABASE = "mysql-odata"
+
+cleanDbHost = DB_SERVER
+if DB_PORT != 3306:
+	cleanDbHost += ":" + str(DB_PORT)
+
+log.info("Using database `"+DB_DATABASE+"` on MySQL server `"+cleanDbHost+"` as user `"+DB_USER+"`...")
+
 con = MySQLdb.connect(
-	DB_SERVER,
-	DB_USER,
-	DB_PASS,
-	args.database,
+	host=DB_SERVER,
+	port=DB_PORT,
+	user=DB_USER,
+	passwd=DB_PASS,
+	db=DB_DATABASE,
 	use_unicode=True,
 	charset=DB_DEFAULT_CHARSET
 )
@@ -523,6 +558,12 @@ with con:
 
 	odRoot = args.odataroot
 	odRoot.rstrip("/") # trailing slashes are evil!
+
+
+	# DB_SERVER = "localhost"
+	# DB_USER = "root"
+	# DB_PASS = "root"
+	# DB_DATABASE = "odata-mysql"
 
 
 	if args.createtables:
