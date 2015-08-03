@@ -1,19 +1,19 @@
 #!/usr/bin/python
 
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2015 HireWheel
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -334,10 +334,13 @@ def createTables(con, **kwargs):
 
 def insertAllEntities(con, entityType, expandTypes=None, **kwargs):
 
+	retryOn5xx = False
+	if "retryOn5xx" in kwargs:
+		retryOn5xx = kwargs["retryOn5xx"]
+
 	odRoot = OD_ROOT
 	if "odRoot" in kwargs:
 		odRoot = kwargs["odRoot"]
-
 
 	log.info("Beginning batch download for %s (expand: %s)...", entityType, expandTypes)
 
@@ -347,6 +350,8 @@ def insertAllEntities(con, entityType, expandTypes=None, **kwargs):
 	if expandTypes != None:
 		nextUrl += "?$expand=" + expandTypes
 
+	hasRetriedFor5xx = False
+
 	while nextUrl != None:
 
 		log.debug("Querying %s...", nextUrl)
@@ -355,6 +360,18 @@ def insertAllEntities(con, entityType, expandTypes=None, **kwargs):
 			nextUrl,
 			headers = REQ_BASE_HEADERS
 		)
+
+		# retry the same url if we get a 500 error
+		if req.status_code >= 500:
+			if retryOn5xx and not hasRetriedFor5xx:
+				log.warning("Received 5xx error, retrying request...")
+				hasRetriedFor5xx = True
+				continue
+			else:
+				log.error("Server returned a 5xx error; script likely to crash!")
+		else:
+			hasRetriedFor5xx = False
+
 		nextUrl = None
 
 		root = etree.fromstring(req.content)
@@ -486,6 +503,8 @@ parser.add_argument(
 	"-a", "--aggressive", help="drop tables if already exist?", action="store_true")
 parser.add_argument(
 	"-i", "--includeallschemas", help="query all schemas instead of just first?", action="store_true")
+parser.add_argument(
+	"-y", "--retryon5xx", help="retry when the server returns a 5xx error?", action="store_true")
 args = parser.parse_args()
 
 
@@ -517,6 +536,7 @@ with con:
 	if args.downloaddata:
 		if args.entitytype != None:
 			argsInsertEntities = {
+				"retryOn5xx": args.retryon5xx,
 				"odRoot": args.odataroot
 			}
 			insertAllEntities(con, args.entitytype, args.expandtypes, **argsInsertEntities)
