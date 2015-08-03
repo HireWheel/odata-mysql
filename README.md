@@ -24,7 +24,7 @@ Basically, this tool can be used to perform two tasks: creating tables (enabled 
 
 Before you can download data from the server, you need tables for them to go into. Here's the basic command you wanna run:
 
-    python odata_mysql.py -c [-r url_of_odata_root]
+    python odata_mysql.py -c [-r url_of_odata_root] [-b name_of_mysql_database]
 
 This will create tables for all the data types in the first schema on the specified OData server. Currently, it is hardcoded to connect to root@localhost with password "root" and to modify a database called "odata-mysql"; there are variables near the top of the script that you can manually edit if this doesn't match your environment.
 
@@ -36,11 +36,13 @@ If you want to include all schemas on the server instead just the first one, use
 
 Once you have tables created, you can download into them using this command:
 
-    python odata_mysql.py -d [-r url_of_odata_root] [-e entity_type] [-x linked_entity_type]
+    python odata_mysql.py -d [-r url_of_odata_root] [-b name_of_mysql_database] [-e entity_type] [-x linked_entity_type] [-y]
 
 The `-r` flag works the same as for creating tables, but the other flags might be confusing. The `-e` flag specifies the type of entity to download; simple enough, if you want to download the permits, set it to "permits".
 
 Let's say that the entity type "permits" can have "locations" linked to it. The OData protocol allows linked entities to be expanded and included in the output. So if you want to download all permits AND all locations linked to any permit, set the flags `-e permits -x locations`.
+
+The `-y` flag tells the script to retry a request once if it gets a 5xx error (i.e. an internal server error).
 
 ## License
 
