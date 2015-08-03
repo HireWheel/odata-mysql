@@ -28,6 +28,8 @@ To include an OData root, pass the URL with the `-r` flag. Your URL should inclu
 
 By default, this script uses the database "odata-mysql" on the localhost MySQL with "root" as both the username and password. To change this, pass a MySQL URI with the `-u` flag. Your URI should be in this format: `mysql://USER:PASS@HOST:PORT/DATABASE`. The script will use typical defaults for any values missing from your URI (if you omit the password, it will prompt you to enter it).
 
+Alternatively, if you would like to use the default MySQL server/user/password, but would like to specify an alternate database name, you can omit the `-u` flag and instead pass `-b [name_of_database]`.
+
 ### Creating tables
 
 Before you can download data from the server, you need tables for them to go into. Here's the basic command you wanna run:
