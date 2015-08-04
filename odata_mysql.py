@@ -34,19 +34,16 @@ import logging as log
 import pprint
 
 
-# MySQL details
-DB_URI = "mysql://root:root@localhost:3306/odata-mysql"
-
 # requests details
 REQ_USER_AGENT = "odata_mysql.py"
 REQ_BASE_HEADERS = {
 	'User-Agent': REQ_USER_AGENT
 }
 
-# character encoding defaults. don't mess with this stuff!
+# MySQL defaults
+DB_DEFAULT_URI = "mysql://root:root@localhost:3306/odata-mysql"
 DB_DEFAULT_CHARSET = "utf8"
 DB_DEFAULT_COLLATION = "utf8_unicode_ci"
-
 
 # mapping MySQL types to categories
 DB_TYPES_NUMERIC = (
@@ -137,6 +134,10 @@ def generateCreateTableQueries(**kwargs):
 	if "odRoot" in kwargs:
 		odRoot = kwargs["odRoot"]
 
+	onlyEntityType = None
+	if "onlyEntityType" in kwargs:
+		onlyEntityType = kwargs["onlyEntityType"]
+
 
 	url = odRoot + "/$metadata"
 	#log.info("Getting metadata from %s",url)
@@ -166,6 +167,10 @@ def generateCreateTableQueries(**kwargs):
 
 			# TODO: sanitize entityTypeName
 			entityTypeName = entityType.get("Name")
+
+			if onlyEntityType != False and entityTypeName != onlyEntityType:
+				log.debug("Skipping table %s", entityTypeName)
+				continue
 
 			if aggressive:
 				dropTblSql = "DROP TABLE IF EXISTS " + entityTypeName
@@ -493,7 +498,7 @@ parser.add_argument(
 parser.add_argument(
 	"-r", "--odataroot", help="root of OData server", default=OD_ROOT)
 parser.add_argument(
-	"-u", "--databaseuri", help="URI for database connection (i.e. mysql://user:pass@host/database)", default=DB_URI)
+	"-u", "--databaseuri", help="URI for database connection (i.e. mysql://user:pass@host/database)", default=DB_DEFAULT_URI)
 parser.add_argument(
 	"-b", "--databasename", help="Name of database to use (overwrites database URI)", default=None)
 parser.add_argument(
@@ -520,40 +525,40 @@ if dbUri.scheme != '' and dbUri.scheme != "mysql": # if a URI scheme is specifie
 	log.error("This tool only supports MySQL; please use a different database URI. Terminating...")
 	sys.exit(1)
 
-DB_SERVER = dbUri.hostname
-if DB_SERVER == None:
-	DB_SERVER = "localhost"
+dbHost = dbUri.hostname
+if dbHost == None:
+	dbHost = "localhost"
 
-DB_PORT = dbUri.port
-if DB_PORT == None:
-	DB_PORT = 3306
+dbPort = dbUri.port
+if dbPort == None:
+	dbPort = 3306
 
-DB_USER = dbUri.username
-if DB_USER == None:
-	DB_USER = getpass.getuser()
+dbUser = dbUri.username
+if dbUser == None:
+	dbUser = getpass.getuser()
 
-DB_PASS = dbUri.password
-if DB_PASS == None:
-	DB_PASS = getpass.getpass("MySQL password for `" + DB_USER + "`: ")
+dbPass = dbUri.password
+if dbPass == None:
+	dbPass = getpass.getpass("MySQL password for `" + dbUser + "`: ")
 
-DB_DATABASE = dbUri.path.strip("/")
-if DB_DATABASE == '':
-	DB_DATABASE = "mysql-odata"
-if args.databasename != None:
-	DB_DATABASE = args.databasename
+dbDatabase = dbUri.path.strip("/")
+if dbDatabase == '':
+	dbDatabase = "mysql-odata"
+if args.databasename != None: # allow --databasename flag to override --databaseuri
+	dbDatabase = args.databasename
 
-cleanDbHost = DB_SERVER
-if DB_PORT != 3306:
-	cleanDbHost += ":" + str(DB_PORT)
+cleanDbHost = dbHost
+if dbPort != 3306:
+	cleanDbHost += ":" + str(dbPort)
 
-log.info("Using database `"+DB_DATABASE+"` on MySQL server `"+cleanDbHost+"` as user `"+DB_USER+"`...")
+log.info("Using database `"+dbDatabase+"` on MySQL server `"+cleanDbHost+"` as user `"+dbUser+"`...")
 
 con = MySQLdb.connect(
-	host=DB_SERVER,
-	port=DB_PORT,
-	user=DB_USER,
-	passwd=DB_PASS,
-	db=DB_DATABASE,
+	host=dbHost,
+	port=dbPort,
+	user=dbUser,
+	passwd=dbPass,
+	db=dbDatabase,
 	use_unicode=True,
 	charset=DB_DEFAULT_CHARSET
 )
@@ -564,17 +569,12 @@ with con:
 	odRoot.rstrip("/") # trailing slashes are evil!
 
 
-	# DB_SERVER = "localhost"
-	# DB_USER = "root"
-	# DB_PASS = "root"
-	# DB_DATABASE = "odata-mysql"
-
-
 	if args.createtables:
 		argsCreateTables = {
 			"aggressive": args.aggressive,
 			"includeAllSchemas": args.includeallschemas,
-			"odRoot": args.odataroot
+			"odRoot": args.odataroot,
+			"onlyEntityType": args.entitytype
 		}
 		createTables(con, **argsCreateTables)
 

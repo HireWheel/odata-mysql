@@ -20,21 +20,29 @@ This tool also does not currently store the links between data types (i.e. the l
 
 Basically, this tool can be used to perform two tasks: creating tables (enabled with the `-c` flag) and downloading data (enabled with the `-d` flag). You can do these both in one call of the command, or you can do them separately.
 
-### Important flags
+### Global flags
 
-Whether you are creating tables or downloading data, you will probably need to include an OData root and MySQL details.
+Whether you are creating tables or downloading data, the following flags can (and most likely should) be used.
+
+#### OData root
 
 To include an OData root, pass the URL with the `-r` flag. Your URL should include the schema (i.e. http/https) and may or may not include a trailing slash. If no OData root is specified, it defaults to `http://services.odata.org/V3/OData/OData.svc`.
 
-By default, this script uses the database "odata-mysql" on the localhost MySQL with "root" as both the username and password. To change this, pass a MySQL URI with the `-u` flag. Your URI should be in this format: `mysql://USER:PASS@HOST:PORT/DATABASE`. The script will use typical defaults for any values missing from your URI (if you omit the password, it will prompt you to enter it).
+#### MySQL URI
+
+By default, this script connects to the database at `mysql://root:root@localhost:3306/odata-mysql`. To change this, pass a MySQL URI with the `-u` flag. Your URI should be in this format: `mysql://USER:PASS@HOST:PORT/DATABASE`. The script will use typical defaults for any values missing from your URI (if you omit the password, it will prompt you to enter it).
+
+#### Entity type
+
+Use the `-e` flag to specify the name of the data type on the OData server you would like to download. This flag is required if you are downloading data (i.e. with `-d`); however, if you are only creating tables (i.e. with `-c`), you can omit this flag and it will create tables for all data types in the first schema on the server.
 
 ### Creating tables
 
 Before you can download data from the server, you need tables for them to go into. Here's the basic command you wanna run:
 
-    python odata_mysql.py -c [-r odata_root] [-u mysql_uri]
+    python odata_mysql.py -c [-e entity_type] [-r odata_root] [-u mysql_uri]
 
-This will create tables for all the data types in the first schema on the specified OData server. Currently, it is hardcoded to connect to root@localhost with password "root" and to modify a database called "odata-mysql"; there are variables near the top of the script that you can manually edit if this doesn't match your environment.
+This will create tables for all the data types in the first schema on the specified OData server. If you include an entity_type with the `-e` flag, it will only create a table for that data type. Currently, it is hardcoded to connect to root@localhost with password "root" and to modify a database called "odata-mysql"; there are variables near the top of the script that you can manually edit if this doesn't match your environment.
 
 If you want to force the script to drop the tables if they already existed (as opposed to crashing), include the `--aggressive` flag (``-a``).
 
