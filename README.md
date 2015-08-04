@@ -16,27 +16,27 @@ This tool does not yet totally clean and verify all the input from the OData ser
 
 This tool also does not currently store the links between data types (i.e. the links defined by NavigationProperty elements in OData). If you would like to add this functionality, feel free to fork and pull request. Right now, all normal data type columns are prefixed with "data:" in the MySQL column names. If you add links, perhaps you might prefix the columns related to that with "link:" or "nav:" or something.
 
-## Documentation
-
-Basically, this tool can be used to perform two tasks: creating tables (enabled with the `-c` flag) and downloading data (enabled with the `-d` flag). You can do these both in one call of the command, or you can do them separately.
-
-### Global flags
+## Global flags
 
 Whether you are creating tables or downloading data, the following flags can (and most likely should) be used.
 
-#### OData root
+### OData root
 
 To include an OData root, pass the URL with the `-r` flag. Your URL should include the schema (i.e. http/https) and may or may not include a trailing slash. If no OData root is specified, it defaults to `http://services.odata.org/V3/OData/OData.svc`.
 
-#### MySQL URI
+### MySQL URI
 
 By default, this script connects to the database at `mysql://root:root@localhost:3306/odata-mysql`. To change this, pass a MySQL URI with the `-u` flag. Your URI should be in this format: `mysql://USER:PASS@HOST:PORT/DATABASE`. The script will use typical defaults for any values missing from your URI (if you omit the password, it will prompt you to enter it).
 
-#### Entity type
+Alternatively, if you would like to use the default MySQL server/user/password, but would like to specify an alternate database name, you can omit the `-u` flag and instead pass `-b [name_of_database]`. (if, for whatever strange reason, you include both flags, `-b` has precedence over the database name in the `-u` flag)
+
+### Entity type
 
 Use the `-e` flag to specify the name of the data type on the OData server you would like to download. This flag is required if you are downloading data (i.e. with `-d`); however, if you are only creating tables (i.e. with `-c`), you can omit this flag and it will create tables for all data types in the first schema on the server.
 
-Alternatively, if you would like to use the default MySQL server/user/password, but would like to specify an alternate database name, you can omit the `-u` flag and instead pass `-b [name_of_database]`. (if, for whatever strange reason, you include both flags, `-b` has precedence over the database name in the `-u` flag)
+## Commands
+
+Basically, this tool can be used to perform two tasks: creating tables (enabled with the `-c` flag) and downloading data (enabled with the `-d` flag). You can do these both in one call of the command, or you can do them separately.
 
 ### Creating tables
 
