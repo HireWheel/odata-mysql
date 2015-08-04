@@ -85,6 +85,8 @@ OD_DEFAULT_STRING_LENGTH = "65535"
 OD_DEFAULT_DECIMAL_PRECISION = "65"
 OD_DEFAULT_DECIMAL_SCALE = "30"
 
+OD_COL_PREFIX_DATA = "data:"
+
 # probably shouldn't touch these
 OD_NAMESPACES = {
 	"atom": "http://www.w3.org/2005/Atom",
@@ -187,7 +189,7 @@ def generateCreateTableQueries(**kwargs):
 			for p in properties:
 
 				odName = p.get("Name")
-				sqlName = "data:" + odName
+				sqlName = OD_COL_PREFIX_DATA + odName
 
 				odType = p.get("Type")
 
@@ -272,7 +274,8 @@ def generateCreateTableQueries(**kwargs):
 
 			# add key constraints
 			# currently only supports primary key constraints
-			keys = entityType.xpath("Key")
+			# (will produce invalid MySQL query if there are multiple keys)
+			keys = entityType.xpath("edm:Key", namespaces=OD_NAMESPACES)
 
 			for key in keys:
 
@@ -280,7 +283,7 @@ def generateCreateTableQueries(**kwargs):
 				kSql = ""
 				kSql += "PRIMARY KEY ("
 
-				propRefs = key.xpath("PropertyRef")
+				propRefs = key.xpath("edm:PropertyRef", namespaces=OD_NAMESPACES)
 
 				isFirstPropRef = True
 				for propRef in propRefs:
@@ -288,7 +291,7 @@ def generateCreateTableQueries(**kwargs):
 						isFirstPropRef = False
 					else:
 						kSql += ", "
-					kSql += propRef.get("Name")
+					kSql += "`" + OD_COL_PREFIX_DATA + propRef.get("Name") + "`"
 
 				kSql += ")"
 				querySegments.append(kSql)
