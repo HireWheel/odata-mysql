@@ -14,7 +14,7 @@ More documentation available below.
 
 This tool does not yet totally clean and verify all the input from the OData server, so be careful! Don't use it with an untrustworthy OData server or with a critical database.
 
-This tool also does not currently store the links between data types (i.e. the links defined by NavigationProperty elements in OData). If you would like to add this functionality, feel free to fork and pull request. Right now, all normal data type columns are prefixed with "data:" in the MySQL column names. If you add links, perhaps you might prefix the columns related to that with "link:" or "nav:" or something.
+This tool also does not currently store the links between data types (i.e. the links defined by NavigationProperty elements in OData). If you would like to add this functionality, feel free to fork and pull request. Right now, all normal data type columns are prefixed with "data_" in the MySQL column names. If you add links, perhaps you might prefix the columns related to that with "link_" or "nav_" or something.
 
 ## Global flags
 
