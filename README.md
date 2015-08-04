@@ -36,13 +36,15 @@ By default, this script connects to the database at `mysql://root:root@localhost
 
 Use the `-e` flag to specify the name of the data type on the OData server you would like to download. This flag is required if you are downloading data (i.e. with `-d`); however, if you are only creating tables (i.e. with `-c`), you can omit this flag and it will create tables for all data types in the first schema on the server.
 
+Alternatively, if you would like to use the default MySQL server/user/password, but would like to specify an alternate database name, you can omit the `-u` flag and instead pass `-b [name_of_database]`. (if, for whatever strange reason, you include both flags, `-b` has precedence over the database name in the `-u` flag)
+
 ### Creating tables
 
 Before you can download data from the server, you need tables for them to go into. Here's the basic command you wanna run:
 
     python odata_mysql.py -c [-e entity_type] [-r odata_root] [-u mysql_uri]
 
-This will create tables for all the data types in the first schema on the specified OData server. If you include an entity_type with the `-e` flag, it will only create a table for that data type. Currently, it is hardcoded to connect to root@localhost with password "root" and to modify a database called "odata-mysql"; there are variables near the top of the script that you can manually edit if this doesn't match your environment.
+This will create tables for all the data types in the first schema on the specified OData server. If you include an entity_type with the `-e` flag, it will only create a table for that data type.
 
 If you want to force the script to drop the tables if they already existed (as opposed to crashing), include the `--aggressive` flag (``-a``).
 
