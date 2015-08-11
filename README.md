@@ -22,23 +22,23 @@ Whether you are creating tables or downloading data, the following flags can (an
 
 ### OData root
 
-To include an OData root, pass the URL with the `-r` flag. Your URL should include the schema (i.e. http/https) and may or may not include a trailing slash. If no OData root is specified, it defaults to `http://services.odata.org/V3/OData/OData.svc`.
+To include an OData root, pass the URL with the `--odataroot` flag (shortcut: `-r`). Your URL should include the schema (i.e. http/https) and may or may not include a trailing slash. If no OData root is specified, it defaults to `http://services.odata.org/V3/OData/OData.svc`.
 
 ### MySQL URI
 
-By default, this script connects to the database at `mysql://root:root@localhost:3306/odata-mysql`. To change this, pass a MySQL URI with the `-u` flag. Your URI should be in this format: `mysql://USER:PASS@HOST:PORT/DATABASE`. The script will use typical defaults for any values missing from your URI (if you omit the password, it will prompt you to enter it).
+By default, this script connects to the database at `mysql://root:root@localhost:3306/odata-mysql`. To change this, pass a MySQL URI with the `--databaseuri` flag (shortcut: `-u`). Your URI should be in this format: `mysql://USER:PASS@HOST:PORT/DATABASE`. The script will use typical defaults for any values missing from your URI (if you omit the password, it will prompt you to enter it).
 
-Alternatively, if you would like to use the default MySQL server/user/password, but would like to specify an alternate database name, you can omit the `-u` flag and instead pass `-b [name_of_database]`. (if, for whatever strange reason, you include both flags, `-b` has precedence over the database name in the `-u` flag)
+Alternatively, if you would like to use the default MySQL server/user/password, but would like to specify an alternate database name, you can omit the `--databaseuri` flag and instead pass `--databasename [name_of_database]` (shortcut: `-b`). If, for whatever strange reason, you include both flags, `--databasename` has precedence over the database name in the `--databaseuri` flag.
 
 ### Entity type
 
-Use the `-e` flag to specify the name of the data type on the OData server you would like to download. This flag is required if you are downloading data (i.e. with `-d`); however, if you are only creating tables (i.e. with `-c`), you can omit this flag and it will create tables for all data types in the first schema on the server.
+Use the `--entitytype` flag (shortcut: `-e`) to specify the name of the data type on the OData server you would like to download. This flag is required if you are downloading data (i.e. with `-d`); however, if you are only creating tables (i.e. with `-c`), you can omit this flag and it will create tables for all data types in the first schema on the server.
 
-If you are downloading data, there is also a similar flag for expanding entity types, `-x`. This will use the `$expand` parameter in OData to download additional entity types besides the main type you are downloading. For example, let's say you want to download all "permits", but permits have "locations" attached to them, and you want to download all locations as well. The command you'd use for this is `-e permits -x locations`. The `-x` flag also allows you to list multiple tables by simply separating the table names with columns
+If you are downloading data, there is also a similar flag for expanding entity types, `--expandtypes` (shortcut: `-x`). This will use the `$expand` parameter in OData to download additional entity types besides the main type you are downloading. For example, let's say you want to download all "permits", but permits have "locations" attached to them, and you want to download all locations as well. The command you'd use for this is `--entitytype permits --expandtypes locations`. The `--expandtypes` flag also allows you to list multiple tables by simply separating the table names with columns
 
 #### Aliases
 
-By default, this script uses the name of the entities on the OData server as the name of their table in the MySQL database. If you would like to use alternate table names, you can specify an alternate name for the entity type (i.e. the `-e` value) with the `-l` flag, and alternate names for the expand types (i.e. the `-x` values) with the `-k` flag (like the `-x` flag, the `-k` flag supports multiple values separated by commas).
+By default, this script uses the name of the entities on the OData server as the name of their table in the MySQL database. If you would like to use alternate table names, you can specify an alternate name for the entity type (i.e. the `--entitytype` value) with the `--entitytable` flag (shortcut: `-l`), and alternate names for the expand types (i.e. the `--expandtypes` values) with the `--expandtables` flag (shortcut: `-k`). Like the `--expandtypes` flag, the `--expandtables` flag supports multiple values separated by commas.
 
 
 ## Commands
@@ -47,37 +47,40 @@ Basically, this tool can be used to perform two tasks: creating tables (enabled 
 
 ### Creating tables
 
-Before you can download data from the server, you need tables for them to go into. Here's the basic command you wanna run:
+Before you can download data from the server, you need tables for them to go into. Here's the basic command you'll want to run:
 
-    python odata_mysql.py -c [-e entity_type] [-r odata_root] [-u mysql_uri]
+    python odata_mysql.py -c [--entitytype entity_type] [--odataroot odata_root] [--databaseuri mysql_uri]
 
-This will create tables for all the data types in the first schema on the specified OData server. If you include an entity_type with the `-e` flag, it will only create a table for that data type.
+If you prefer longer flags, you can use `--createtables` instead of `-c`.
 
-If you want to force the script to drop the tables if they already existed (as opposed to crashing), include the `--aggressive` flag (``-a``).
+This will create tables for all the data types in the first schema on the specified OData server. If you include an entity type with the `--entitytype` flag (shortcut: `-e`) and/or expand types with the `--expandtypes` flag (shortcut: `-ex`), it will only create tables for those data types.
 
-If you want to include all schemas on the server instead just the first one, use the `--includeallschemas` flag (`-i`) (basically, only including the first schema is a hacky workaround for [Philadelphia's OData server](http://phlapi.com), and this flag disables that hacky workaround).
+If you want to force the script to drop the tables if they already existed (as opposed to crashing), include the `--aggressive` flag (shortcut: `-a`).
+
+If you want to include all schemas on the server instead just the first one, use the `--includeallschemas` flag (shortcut: `-i`) (basically, only including the first schema is a hacky workaround for [Philadelphia's OData server](http://phlapi.com), and this flag disables that hacky workaround).
 
 ### Downloading data
 
 Once you have tables created, you can download into them using this command:
 
-    python odata_mysql.py -d [-e entity_type] [-x linked_entity_type] [-y] [-r odata_root] [-u mysql_uri]
+    python odata_mysql.py -d --entitytype entity_type [--expandtypes linked_entity_type] [--retryon5xx] [--odataroot odata_root] [--databaseuri mysql_uri]
 
-The `-r` flag works the same as for creating tables, but the other flags might be confusing. The `-e` flag specifies the type of entity to download; simple enough, if you want to download the permits, set it to "permits".
+If you prefer longer flags, you can use`--downloaddata` instead of `-d`.
 
-Let's say that the entity type "permits" can have "locations" linked to it. The OData protocol allows linked entities to be expanded and included in the output. So if you want to download all permits AND all locations linked to any permit, set the flags `-e permits -x locations`.
+The `--entitytype` flag is required for downloading data; see the Flags section of this readme for details on that flag and the `--expandtypes` flag.
 
-The `-y` flag tells the script to retry a request once if it gets a 5xx error (i.e. an internal server error).
+The `--retryon5xx` flag (shortcut: `-y`) tells the script to retry a request once if it gets a 5xx error (i.e. an internal server error).
 
 ## Examples
 
-This documentation is a bit complex and confusing, so here's an example. This connects to the OData server for [Philadelphia Open Data](http://phlapi.com). It creates tables for permits and locations, then downloads all permits, as well as all locations attached to any permit. It stores the permits in a MySQL table called "PhillyPermit" and the locations in a MySQL table called "PhillyLocation", and both of these tables are created in a MySQL database called "my_awesome_database". The `-y` flag is also included in case the API throws an internal server error (which this particular server is sometimes prone to do). Here's the full command:
+This documentation is a bit complex and confusing, so here's an example. This connects to the OData server for [Philadelphia Open Data](http://phlapi.com). It creates tables for permits and locations, then downloads all permits, as well as all locations attached to any permit. It stores the permits in a MySQL table called "PhillyPermit" and the locations in a MySQL table called "PhillyLocation", and both of these tables are created in a MySQL database called "my_awesome_database". The `--retryon5xx` flag is also included in case the API throws an internal server error (which this particular server is sometimes prone to do). Here's the full command:
+
+    python odata_mysql.py --createtables --downloaddata --odataroot http://api.phila.gov/li/v1 --databasename my_awesome_database --entitytype permits --entitytable PhillyPermit --expandtypes locations --expandtables PhillyLocation --retryon5xx
+
+If you prefer to use the shortcut versions of the flags, here is the same command using those:
 
     python odata_mysql.py -c -d -r http://api.phila.gov/li/v1 -b my_awesome_database -e permits -l PhillyPermit -x locations -k PhillyLocation -y
 
-If you prefer, here's a more verbose form of the exact same command:
-
-    python odata_mysql.py --createtables --downloaddata --odataroot http://api.phila.gov/li/v1 --databasename my_awesome_database --entitytype permits --entitytable PhillyPermit --expandtypes locations --expandtables PhillyLocation --retryon5xx
 
 ## License
 
