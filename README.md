@@ -38,7 +38,7 @@ If you are downloading data, there is also a similar flag for expanding entity t
 
 #### Aliases
 
-By default, this script uses the name of the entities on the OData server as the name of their table in the MySQL database. If you would like to use alternate table names, you can specify an alternate name for the entity type (i.e. the `--entitytype` value) with the `--entitytable` flag (shortcut: `-l`), and alternate names for the expand types (i.e. the `--expandtypes` values) with the `--expandtables` flag (shortcut: `-k`). Like the `--expandtypes` flag, the `--expandtables` flag supports multiple values separated by commas.
+By default, this script uses the name of the entities on the OData server as the name of their table in the MySQL database. If you would like to use alternate table names, you can specify an alternate name for the entity type with the `--entitytable` flag (shortcut: `-l`), and alternate names for the expand types with the `--expandtables` flag (shortcut: `-k`). Like the `--expandtypes` flag, the `--expandtables` flag supports multiple values separated by commas.
 
 
 ## Commands
