@@ -118,6 +118,14 @@ OD_TYPES_f = (
 	"Edm.Double"
 )
 
+# given a set of odata-to-db name replacement rules and an odata name,
+# returns the proper db name for that odata name
+def getNameForTable(rules, odataName):
+	for rule in rules:
+		if rule["odata"] == odataName:
+			return rule["db"]
+	return odataName
+
 
 # generates tables for all entity types in the OData server's first schema
 # set aggressive=True to drop old tables
@@ -136,9 +144,13 @@ def generateCreateTableQueries(**kwargs):
 	if "odRoot" in kwargs:
 		odRoot = kwargs["odRoot"]
 
-	onlyEntityType = None
-	if "onlyEntityType" in kwargs:
-		onlyEntityType = kwargs["onlyEntityType"]
+	onlyEntityTypes = None
+	if "onlyEntityTypes" in kwargs:
+		onlyEntityTypes = kwargs["onlyEntityTypes"]
+
+	entityReplacementRules = None
+	if "entityReplacementRules" in kwargs:
+		entityReplacementRules = kwargs["entityReplacementRules"]
 
 
 	url = odRoot + "/$metadata"
@@ -151,17 +163,9 @@ def generateCreateTableQueries(**kwargs):
 
 	queries = []
 
+	# TODO: let user precisely select which schema instead of only defaulting to first one
 	for schema in schemas:
 		namespace = schema.get("Namespace")
-
-		# schemaName = DB_SCHEMA_PREFIX + namespace
-
-		# if aggressive:
-		# 	dropDbSql = "DROP SCHEMA IF EXISTS " + schemaName
-		# 	queries.append(dropDbSql)
-
-		# dbSql = "CREATE SCHEMA IF NOT EXISTS " + schemaName
-		# queries.append(dbSql)
 
 		entityTypes = schema.xpath("edm:EntityType", namespaces=OD_NAMESPACES)
 
@@ -170,16 +174,18 @@ def generateCreateTableQueries(**kwargs):
 			# TODO: sanitize entityTypeName
 			entityTypeName = entityType.get("Name")
 
-			if onlyEntityType != False and entityTypeName != onlyEntityType:
+			if len(onlyEntityTypes) != 0 and entityTypeName not in onlyEntityTypes:
 				log.debug("Skipping table %s", entityTypeName)
 				continue
 
+			entityTableName = getNameForTable(entityReplacementRules, entityTypeName)
+
 			if aggressive:
-				dropTblSql = "DROP TABLE IF EXISTS " + entityTypeName
+				dropTblSql = "DROP TABLE IF EXISTS " + entityTableName
 				queries.append(dropTblSql)
 
 			query = "CREATE TABLE "
-			query += entityTypeName
+			query += entityTableName
 			query += "("
 
 			querySegments = []
@@ -349,6 +355,10 @@ def insertAllEntities(con, entityType, expandTypes=None, **kwargs):
 	if "odRoot" in kwargs:
 		odRoot = kwargs["odRoot"]
 
+	entityReplacementRules = None
+	if "entityReplacementRules" in kwargs:
+		entityReplacementRules = kwargs["entityReplacementRules"]
+
 	log.info("Beginning batch download for %s (expand: %s)...", entityType, expandTypes)
 
 	cur = con.cursor()
@@ -392,18 +402,21 @@ def insertAllEntities(con, entityType, expandTypes=None, **kwargs):
 
 		for entry in entries:
 
-			insertEntity(cur, entry)
+			insertEntity(cur, entry, entityReplacementRules)
 			con.commit()
 
 	log.info("Finished batch download!")
 
 
 # TODO: handle duplicate rows
-def insertEntity(cur, entry):
+def insertEntity(cur, entry, entityNameReplaceRule):
+
 	propertyElements = entry.xpath("atom:content/m:properties/d:*", namespaces=OD_NAMESPACES)
 
 	# TODO: make this more flexible (and more readable)
 	entityType = entry.xpath("atom:category/@term", namespaces=OD_NAMESPACES)[0].split(".")[1]
+
+	entityTableName = getNameForTable(entityReplacementRules, entityType)
 
 	props = []
 	propCols = []
@@ -416,7 +429,7 @@ def insertEntity(cur, entry):
 		tagSplit = tag.split("}")
 		tag = tagSplit[len(tagSplit) - 1]
 
-		col = "data:" + tag
+		col = OD_COL_PREFIX_DATA + tag
 
 		val = None
 		if p.get("m:null", default=False) != "true":
@@ -436,7 +449,7 @@ def insertEntity(cur, entry):
 	sqlData = []
 
 	sql = ""
-	sql += "INSERT INTO " + entityType
+	sql += "REPLACE INTO " + entityTableName
 
 	# output all the column names
 	sql += "("
@@ -503,11 +516,15 @@ parser.add_argument(
 parser.add_argument(
 	"-u", "--databaseuri", help="URI for database connection (i.e. mysql://user:pass@host/database)", default=DB_DEFAULT_URI)
 parser.add_argument(
-	"-b", "--databasename", help="Name of database to use (overwrites database URI)", default=None)
+	"-b", "--databasename", help="name of database to use (overrides database URI)", default=None)
 parser.add_argument(
-	"-e", "--entitytype", help="type of entity to batch query", default=None)
+	"-e", "--entitytype", help="type of entity to query", default=None)
+parser.add_argument(
+	"-l", "--entitytable", help="replacement name for the entity type's database table", default=None)
 parser.add_argument(
 	"-x", "--expandtypes", help="type(s) of entity to expand, separated by commas", default=None)
+parser.add_argument(
+	"-k", "--expandtables", help="replacement names for the expand types' database table", default=None)
 parser.add_argument(
 	"-a", "--aggressive", help="drop tables if already exist?", action="store_true")
 parser.add_argument(
@@ -571,13 +588,45 @@ with con:
 	odRoot = args.odataroot
 	odRoot.rstrip("/") # trailing slashes are evil!
 
+	entityType = args.entitytype
+
+	# array of rules for converting OData names to MySQL names
+	entityReplacementRules = []
+
+	if args.entitytable != None:
+		rule = {}
+		rule["odata"] = entityType
+		rule["db"] = args.entitytable
+		entityReplacementRules.append(rule)
+
+	if args.expandtables != None:
+		typesArr = args.expandtypes.split(",")
+		tablesArr = args.expandtables.split(",")
+
+		assert len(typesArr) == len(tablesArr)
+
+		for i in range(len(typesArr)):
+			rule = {}
+			rule["odata"] = typesArr[i]
+			rule["db"] = tablesArr[i]
+			entityReplacementRules.append(rule)
+
 
 	if args.createtables:
+
+		# build list of entity types to create tables for
+		onlyEntityTypes = []
+		if args.expandtypes != None:
+			onlyEntityTypes = onlyEntityTypes + args.expandtypes.split(",")
+		if entityType != None:
+			onlyEntityTypes.append(entityType)
+
 		argsCreateTables = {
 			"aggressive": args.aggressive,
 			"includeAllSchemas": args.includeallschemas,
 			"odRoot": args.odataroot,
-			"onlyEntityType": args.entitytype
+			"onlyEntityTypes": onlyEntityTypes,
+			"entityReplacementRules": entityReplacementRules
 		}
 		createTables(con, **argsCreateTables)
 
@@ -585,6 +634,7 @@ with con:
 		if args.entitytype != None:
 			argsInsertEntities = {
 				"retryOn5xx": args.retryon5xx,
-				"odRoot": args.odataroot
+				"odRoot": args.odataroot,
+				"entityReplacementRules": entityReplacementRules
 			}
-			insertAllEntities(con, args.entitytype, args.expandtypes, **argsInsertEntities)
+			insertAllEntities(con, entityType, args.expandtypes, **argsInsertEntities)

@@ -16,7 +16,7 @@ This tool does not yet totally clean and verify all the input from the OData ser
 
 This tool also does not currently store the links between data types (i.e. the links defined by NavigationProperty elements in OData). If you would like to add this functionality, feel free to fork and pull request. Right now, all normal data type columns are prefixed with "data_" in the MySQL column names. If you add links, perhaps you might prefix the columns related to that with "link_" or "nav_" or something.
 
-## Global flags
+## Flags
 
 Whether you are creating tables or downloading data, the following flags can (and most likely should) be used.
 
@@ -33,6 +33,13 @@ Alternatively, if you would like to use the default MySQL server/user/password, 
 ### Entity type
 
 Use the `-e` flag to specify the name of the data type on the OData server you would like to download. This flag is required if you are downloading data (i.e. with `-d`); however, if you are only creating tables (i.e. with `-c`), you can omit this flag and it will create tables for all data types in the first schema on the server.
+
+If you are downloading data, there is also a similar flag for expanding entity types, `-x`. This will use the `$expand` parameter in OData to download additional entity types besides the main type you are downloading. For example, let's say you want to download all "permits", but permits have "locations" attached to them, and you want to download all locations as well. The command you'd use for this is `-e permits -x locations`. The `-x` flag also allows you to list multiple tables by simply separating the table names with columns
+
+#### Aliases
+
+By default, this script uses the name of the entities on the OData server as the name of their table in the MySQL database. If you would like to use alternate table names, you can specify an alternate name for the entity type (i.e. the `-e` value) with the `-l` flag, and alternate names for the expand types (i.e. the `-x` values) with the `-k` flag (like the `-x` flag, the `-k` flag supports multiple values separated by commas).
+
 
 ## Commands
 
@@ -61,6 +68,16 @@ The `-r` flag works the same as for creating tables, but the other flags might b
 Let's say that the entity type "permits" can have "locations" linked to it. The OData protocol allows linked entities to be expanded and included in the output. So if you want to download all permits AND all locations linked to any permit, set the flags `-e permits -x locations`.
 
 The `-y` flag tells the script to retry a request once if it gets a 5xx error (i.e. an internal server error).
+
+## Examples
+
+This documentation is a bit complex and confusing, so here's an example. This connects to the OData server for [Philadelphia Open Data](http://phlapi.com). It creates tables for permits and locations, then downloads all permits, as well as all locations attached to any permit. It stores the permits in a MySQL table called "PhillyPermit" and the locations in a MySQL table called "PhillyLocation", and both of these tables are created in a MySQL database called "my_awesome_database". The `-y` flag is also included in case the API throws an internal server error (which this particular server is sometimes prone to do). Here's the full command:
+
+    python odata_mysql.py -c -d -r http://api.phila.gov/li/v1 -b my_awesome_database -e permits -l PhillyPermit -x locations -k PhillyLocation -y
+
+If you prefer, here's a more verbose form of the exact same command:
+
+    python odata_mysql.py --createtables --downloaddata --odataroot http://api.phila.gov/li/v1 --databasename my_awesome_database --entitytype permits --entitytable PhillyPermit --expandtypes locations --expandtables PhillyLocation --retryon5xx
 
 ## License
 
