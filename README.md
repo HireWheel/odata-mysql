@@ -1,3 +1,5 @@
+**Heads up: this tool is no longer actively maintained (but feel free to tweet [@oxguy3](//twitter.com/oxguy3) if you need any help with it)**
+
 # OData to MySQL
 
 A CLI tool for downloading from an OData server into a MySQL database.
