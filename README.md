@@ -55,7 +55,7 @@ Before you can download data from the server, you need tables for them to go int
 
 If you prefer longer flags, you can use `--createtables` instead of `-c`.
 
-This will create tables for all the data types in the first schema on the specified OData server. If you include an entity type with the `--entitytype` flag (shortcut: `-e`) and/or expand types with the `--expandtypes` flag (shortcut: `-ex`), it will only create tables for those data types.
+This will create tables for all the data types in the first schema on the specified OData server. If you include an entity type with the `--entitytype` flag (shortcut: `-e`) and/or expand types with the `--expandtypes` flag (shortcut: `-x`), it will only create tables for those data types.
 
 If you want to force the script to drop the tables if they already existed (as opposed to crashing), include the `--aggressive` flag (shortcut: `-a`).
 
